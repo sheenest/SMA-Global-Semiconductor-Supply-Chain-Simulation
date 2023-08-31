@@ -1,0 +1,364 @@
+---
+title: "Semiconductor Simulation: Data Analysis Report"
+author: "Tan Zen Sheen"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+# OBJECTIVE
+To assess the significance and magnitude of the Simulated Geopolitical Intervention of the US-China Trade war on the Global Semiconductor Supply Chain Economy.
+
+# DATA WRANGLING IN MICROSOFT EXCEL
+
+**Step 1:** The output data from our JaamSim Semiconductor Simulation was converted from .txt file format to .xlsx file format using Microsoft Excel.
+
+**Step 2:** The following Excel formulas were applied to all three Excel files containing data of two variations of the simulation.
+
+- ***Past Scenario:*** US is the biggest player in the semiconductor industry. China is yet to have its own capability of producing and manufacturing semiconductors and has to outsource to US & East Asia for semiconductor production and manufacturing.
+
+- ***Future Scenario:*** China is capable of producing and manufacturing semiconductors on its own and has its supply chain trade links blocked from the US & East Asia.
+
+![](./Excel_Data_Wrangling/Slide1.jpg)
+
+![](./Excel_Data_Wrangling/Slide2.jpg)
+
+![](./Excel_Data_Wrangling/Slide3.jpg)
+
+It is important to note that each observation or row in the data set represents one month in the simulation.
+
+Both Excel files are exported as .csv files for data analysis in R.
+
+# Exploratory Data Analysis
+
+```{r}
+past_ts <- read.csv('past_data.csv')
+future_ts <- read.csv('future_data.csv')
+
+# print( nrow(past_ts))
+```
+
+Let us first take a look at the total monthly profits for all 5 regions for both Past and Future Scenarios
+
+## Look into the first few rows of the dataset to make sure it is correct
+```{r}
+show(head(past_ts))
+```
+
+```{r}
+show(head(future_ts))
+```
+
+## Visualize Total Monthly Profits
+Due to the large number of observations, we will visaulize the first 400 observations in the data.
+```{r}
+library(ggplot2)
+
+## Visualize Total Profits for Past scenarios:
+ggplot(past_ts[1:400,], aes(x = Months, y = Total)) + geom_line(color="black") + ggtitle("Past Scenario: Total Profits")
+
+```
+
+```{r}
+
+## Visualize Total Profits for Future scenarios:
+ggplot(future_ts[1:400,], aes(x = Months, y = Total)) + geom_line(color="black") + ggtitle("Future Scenario: Total Profits")
+
+```
+
+
+## Compute means and variances of Monthly Profits of all regions in both Past and Future Scenarios
+```{r}
+
+past_means <- colMeans(past_ts[2:7])
+past_variances <- apply(past_ts[2:7], 2, var)
+
+# Create a new dataframe to store the results
+summary_past <- data.frame(
+  # Series = colnames(past_ts),
+  Mean = past_means,
+  Variance = past_variances
+)
+
+# Display the summary dataframe
+show(summary_past)
+
+```
+```{r}
+
+future_means <- colMeans(future_ts[2:7])
+future_variances <- apply(future_ts[2:7], 2, var)
+
+# Create a new dataframe to store the results
+summary_future <- data.frame(
+  # Series = colnames(past_ts),
+  Mean = future_means,
+  Variance = future_variances
+)
+
+# Display the summary dataframe
+show(summary_future)
+
+```
+
+## Problems with Data
+- **There is an initialization bias**
+- **Data has a lot of fluctuations and has a very high variances, making it difficult for us to get any meaningful results with hypothesis testing**
+
+# Remove Initalization Bias
+As running multiple simulations from JaamSim is difficult, we have to make do with the time series data from 1 simulation only.
+Hence, we are not able to use Welch's method to find the average of k simulations. Rather we can instead gauge the initialization bias by observing the initialization bias of the current data set, then setting the burn-in period to be 2 times the observed burn-in period, so we can be sure that all initialization bias is removed.
+
+Also, we will visualize the monthly profits of all regions in both past and future data sets, and take the burn-in period of the region and time period that has the longest initialization bias.
+
+
+## Past Scenario - Visualize Monthly Profit of each region to determine burn-in period
+
+```{r}
+
+ggplot(past_ts[1:400,], aes(x = Months, y = CHN)) + geom_line(color="red") + ggtitle("Past Scenario: Monthly Profit of China")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(past_ts[1:400,], aes(x = Months, y = SEA)) + geom_line(color="dark green") + ggtitle("Past Scenario: Monthly Profit of Southeast Asia")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(past_ts[1:400,], aes(x = Months, y = EAS)) + geom_line(color="dark turquoise") + ggtitle("Past Scenario: Monthly Profit of East Asia")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(past_ts[1:400,], aes(x = Months, y = USA)) + geom_line(color="purple") + ggtitle("Past Scenario: Monthly Profit of America")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(past_ts[1:400,], aes(x = Months, y = EUR)) + geom_line(color="orange") + ggtitle("Past Scenario: Monthly Profit of Europe")+
+    scale_x_continuous(n.breaks= 40 )
+```
+
+Looking at the past data, the burn-in period for most of the countries is about 10 months.
+
+
+## Future Scenario - Visualize Monthly Profit of each region to determine burn-in period
+
+```{r}
+ggplot(future_ts[1:400,], aes(x = Months, y = CHN)) + geom_line(color="red") + ggtitle("Future Scenario: Monthly Profit of China")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(future_ts[1:400,], aes(x = Months, y = SEA)) + geom_line(color="dark green") + ggtitle("Future Scenario: Monthly Profit of Southeast Asia")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(future_ts[1:400,], aes(x = Months, y = EAS)) + geom_line(color="dark turquoise") + ggtitle("Future Scenario: Monthly Profit of East Asia")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(future_ts[1:400,], aes(x = Months, y = USA)) + geom_line(color="purple") + ggtitle("Future Scenario: Monthly Profit of America")+
+    scale_x_continuous(n.breaks= 40 )
+ggplot(future_ts[1:400,], aes(x = Months, y = EUR)) + geom_line(color="orange") + ggtitle("Future Scenario: Monthly Profit of Europe")+
+    scale_x_continuous(n.breaks= 40 )
+```
+
+Looking at the future data, all countries have a burn-in period of about 10 months.
+
+With this, we conclude that the burn-in period of the data is 10 months for the both past and present data.
+
+Setting the burn-in period as the maximum burn-in period in the data (10 months) and then multiplying by 2, **we get a burn-in period of 20 months for both past and future data sets**. So the first 20 observations of the data is removed.
+
+
+## Removed burn-in period of first 20 observations
+```{r}
+
+new_past_ts <- past_ts[ 21:nrow(past_ts) , 1:7 ]
+new_future_ts <- future_ts[ 21:nrow(future_ts) , 1:7 ]
+print(nrow( new_past_ts ) )
+print(nrow(new_future_ts))
+
+```
+It is notable that we are now left with 12147 observations from both past and future data sets respectively.
+Now that the burn-in period has been removed, we are confident that there is no more initialization bias.
+
+# Batch Means Approach
+In reducing the variance of both past and future data sets, we will use the Batch Means Approach to analyze both Time Series data sets.
+
+We split up the time series data into 1000 batches of 12 data points. As each data point represents 1 month, each batch will represent 1 year in the simulation. By applying a Batch Means approach to analyze the Time Series data, we are essentially analyzing the average monthly profits of each year in the Simulation.
+
+By treating each year as an independent simulation, we compute 2 samples of average monthly profits of each year for both Past and Future simulations.
+
+We then compute the means and variances of the samples to get a good estimate of the means and variances of the monthly profits of each year,
+
+To simplify the process of splitting up the time series into batches, we subset 12000 of the observations, and split them into 1000 batches of 12 observations.
+
+
+```{r}
+
+# Helper function to do batch means approach
+batch_mean_approach <- function(input_data) {
+  # Subset the first 600 observations
+  subset_data <- input_data[1:12000]
+  
+  # Split into 20 batches of 600 observations
+  batches <- split(subset_data, rep(1:1000, each = 12))
+  
+  # Calculate the average monthly profit of the 20 batches
+  batch_mean <- sapply(batches, mean)
+  
+  return(batch_mean)
+}
+
+batch_mean_future <- data.frame( lapply(new_future_ts, batch_mean_approach) )
+batch_mean_future<- batch_mean_future[ 2:7 ]
+batch_mean_past <- data.frame( lapply(new_past_ts, batch_mean_approach) )
+batch_mean_past <- batch_mean_past[2:7]
+# future_chn_ATH <- antithetic_variable( future_ts$CHN )
+```
+
+
+We now have 1000 rows of batch mean monthly profits for each Past and Future Data Sets.
+```{r}
+print( head(batch_mean_past) )
+print( nrow(batch_mean_past) )
+```
+
+```{r}
+print( head(batch_mean_future ))
+print( nrow(batch_mean_future ))
+```
+
+
+## Compute Means and Variances of new Past and Future data
+```{r}
+past_batch_means <- colMeans(batch_mean_past)
+past_batch_variances <- apply(batch_mean_past, 2, var)
+
+# Create a new dataframe to store the results
+summary_batch_past <- data.frame(
+  # Series = colnames(past_ts),
+  Mean = past_batch_means,
+  Variance = past_batch_variances
+)
+
+show(summary_batch_past)
+
+
+```
+
+```{r}
+
+future_batch_means <- colMeans(batch_mean_future)
+future_batch_variances <- apply(batch_mean_future, 2, var)
+
+# Create a new dataframe to store the results
+summary_batch_future <- data.frame(
+  # Series = colnames(past_ts),
+  Mean = future_batch_means,
+  Variance = future_batch_variances
+)
+
+show(summary_batch_future)
+```
+
+## Variance Reduction
+Let us see how much was the variance reduced through the Batch Means Approach.
+```{r}
+show( summary_batch_past - summary_past )
+```
+```{r}
+show( summary_batch_future - summary_future )
+```
+
+It can be seen that that there has been slight changes to the mean, while the variance has reduced significantly. 
+
+Side note: The change in mean is due to the removal of the initialization bias, and the rounding off error in the computation of the batch means. 
+
+# 2 Sample T-tests for all regions and Total
+
+In order to determine if the past and future average monthly profits are statistically different, we treat the batch means of both past and future monthly profits across all 5 regions as 2 different samples, and construct a 2 sample T-test for each region.
+
+
+$$\\ Let \ \mu_{1i} \ represent \ the \ past \ mean \ monthly \ profits \ of \ the \ i^{th} \ region \\
+and \ \mu_{2i} \ represent \ the \ future \ mean \ monthly \ profits \ of \ the \ i^{th} \ region \\
+\\ Constructing \ the \ Hypothesis \ test \ for \ each \ region \ i :
+\\H_0: \mu_{1i} - \mu_{2i} = 0
+\\H_1: \mu_{1i} - \mu_{2i} \ne 0$$
+
+```{r}
+# Helper function for the 2 Sample T-tests.
+t_test <- function ( population1 , population2 ){
+  # Calculate sample statistics
+  mean1 <- mean(population1)
+  mean2 <- mean(population2)
+  var1 <- var(population1)
+  var2 <- var(population2)
+  n1 <- length(population1)
+  n2 <- length(population2)
+  
+  # Calculate the standard error of the difference
+  SE <- sqrt((var1 / n1) + (var2 / n2))
+  
+  # Calculate the t-value
+  t_value <- (mean1 - mean2) / SE
+  
+  # Calculate degrees of freedom
+  df <- (var1 / n1 + var2 / n2)^2 / ((var1^2 / (n1^2 * (n1 - 1))) + (var2^2 / (n2^2 * (n2 - 1))))
+  
+  # Calculate the p-value
+  p_value <- 2 * pt(-abs(t_value), df)
+  
+  # Calculate the confidence interval
+  margin_of_error <- qt(0.975, df) * SE #2.5th percentile for two-tailed test
+  confidence_interval <- c( round(mean1 - mean2 - margin_of_error,3) , round(mean1 - mean2 + margin_of_error,3) )
+  
+  # Display the results
+  print(paste("t-value:", round( t_value,3) ) )
+  # print(paste("Degrees of Freedom:", df))
+  print(paste("p-value:", round(p_value,5) ))
+  print(paste("95% Confidence Interval:", "(", confidence_interval[1], ",", confidence_interval[2], ")"))
+  
+}
+```
+
+## T-test for China
+```{r}
+CHN_t_test <- t_test( batch_mean_past$CHN , batch_mean_future$CHN)
+```
+With a negative t value of -46.389, and the 95% confidence interval of ( -1716.797 , -1577.503 ) that does not contain 0, we reject the null hypothesis and show that the mean monthly profits of China in the future is significantly higher than in the past.
+
+## T-test for Southeast Asia
+```{r}
+SEA_t_test <- t_test( batch_mean_past$SEA , batch_mean_future$SEA)
+```
+With a positive t value of -16.393, and the 95% confidence interval of ( -757.944 , -595.972 ) that does not contain 0, we reject the null hypothesis and show that the mean monthly profits of Southeast Asia in the future is significantly higher than in the past.
+
+## T-test for East Asia
+```{r}
+EAS_t_test <- t_test( batch_mean_past$EAS , batch_mean_future$EAS)
+```
+With a positive t value of 41.364, and the 95% confidence interval of ( 1105.075 , 1215.109 ) that does not contain 0, we reject the null hypothesis and show that the mean monthly profits of East Asia in the future is significantly lower than in the past.
+
+
+## T-test for United States of America
+```{r}
+USA_t_test <- t_test( batch_mean_past$USA , batch_mean_future$USA)
+```
+With a positive t value of 15.494, and the 95% confidence interval of ( 717.896 , 926.004 ) that does not contain 0, we reject the null hypothesis and show that the mean monthly profits of America in the future is significantly lower than in the past.
+
+## T-test for Europe
+```{r}
+EUR_t_test <- t_test( batch_mean_past$EUR , batch_mean_future$EUR)
+```
+With a negative t value of -0.324, and the 95% confidence interval of ( -40.208 , 28.808 ) that contains 0, we cannot reject the null hypothesis and show that the slight change in mean monthly profits for Europe is insignificant.
+
+## T-test for Total Monthly Profits across all 5 Regions
+```{r}
+TOTAL_t_test <- t_test( batch_mean_past$Total , batch_mean_future$Total)
+```
+With a negative t value of -4.664, and the 95% confidence interval of ( -494.63 , -201.804 ), we reject the null hypothesis and show that the mean total monthly profits of all 5 regions in the future is significantly higher than in the past.
+
+## Through the Hypothesis Testing, we arrive at the conclusion that China, Southest Asia, East Asia and United States have been impacted with significant losses/gains. 
+Now, let us see how much profit/loss did each region get after the Geopolitical Intervention.
+
+## Percentage Change in profits
+```{r}
+
+percentage_change <- paste( ( round( 
+  ( colMeans( new_future_ts[2:7] ) - colMeans(new_past_ts[2:7])  )/ colMeans(new_past_ts[2:7]) * 100  
+  , 2)  ) , "%" )
+percentage_change <- cbind( colnames( new_future_ts[2:7] ) , percentage_change )
+print( percentage_change )
+
+```
+
+Looking at the Percentage Change, the Regions that profited through the Geopolitical Intervention are China and Southeast Asia, while the regions that suffered losses are East Asia and the United States of America. Refer to the report for a detailed explanation on the various percentage changes of each region.
+
+# Conclusion
+In this analysis, we used a Batch Means Approach to analyze the monthly profits of the data and conducted 2 Sample T-tests to determine if there is a significant difference between both past and future datasets. After the tests, we arrived at the conclusion that the United States and East Asia suffered significant losses in the Semiconductor Supply Chain, while China and Southeast Asia had a significant increase in profits.
+
+
