@@ -3,7 +3,7 @@
 In this project, a Simultion of the Global Semiconductor Supply Chain is Simulated on JaamSim. In modelling the impact of the tensions in the US-China Trade war, the project focuses on the event in 2018 where China stole US' Intellectual Property in the production of Semiconductors and in doind so, advances its own capabilities and infrastructure in the Production of Semiconductors. \
 In modelling the impact of the Geopolitical Intervention on the Economy, two Simulations are created, each representing the Global Semiconductor Economy before and after the intervention. Through Data Analysis and Statistical tests, this project will assess the significance and magnitude of the Geopolitical Intervention on Global and Individual Regional Economies.
 
-Watch the Project Video [here](https://www.youtube.com/watch?v=frPPFst0al8):
+Watch the Project Video [here](https://www.youtube.com/watch?v=frPPFst0al8).
 
 # Instructions
 The full details of the project can be viewed in the 
